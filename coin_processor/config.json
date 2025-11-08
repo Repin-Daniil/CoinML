@@ -1,5 +1,5 @@
 {
-  "output_dir": "data/output_refactored",
+  "output_dir": "data/output",
   "pipeline_steps": [
     { "name": "LoadImage", "params": {} },
     {

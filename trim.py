@@ -7,7 +7,7 @@ import numpy as np
 
 from coin_processor import PipelineBuilder
 
-CONFIG_PATH = "config.json"
+CONFIG_PATH = "coin_processor/config.json"
 INPUT_DIR = "data/input"
 OUTPUT_DIR = "data/cropped"
 
