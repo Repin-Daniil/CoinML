@@ -19,7 +19,7 @@ CREATE TABLE coins (
     coin_year Int32,
 
     -- Utility
-    retry_count Uint8,
+    retry_count Uint8 DEFAULT 0,
     scraped_at Timestamp,
     processed_at Timestamp,
     INDEX status_index GLOBAL SYNC ON (status),

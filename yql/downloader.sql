@@ -15,9 +15,10 @@ WHERE coin_id = $coin_id
 -- Error case
 UPDATE coins
 SET
-    retry_count = retry_count + 1,
+    retry_count = retry_count + CAST(1 AS Uint8),
     status = CASE
-        WHEN retry_count + 1 >= 5 THEN "failed"
+        WHEN retry_count + CAST(1 AS Uint8) >= CAST(5 AS Uint8) THEN "failed"
         ELSE status
     END
 WHERE coin_id = $coin_id;
+
