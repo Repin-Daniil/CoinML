@@ -84,7 +84,7 @@ class CoinParser:
                     print(f"✓ Страница {page}: найдено {len(coins)} монет")
                     yield coins
 
-                    await asyncio.sleep(random.uniform(1.0, 2.0))
+                    await asyncio.sleep(random.uniform(1.0, 4.0))
 
                 except Exception as e:
                     print(f"✗ Ошибка на странице {page}: {e}")
