@@ -1,0 +1,36 @@
+import asyncio
+
+from parser import CoinParser
+from database import YDBBatchSaver
+
+async def main():
+    # todo вынести в envÏ
+    YDB_ENDPOINT = "grpcs://ydb.serverless.yandexcloud.net:2135"
+    YDB_DATABASE = "/ru-central1/b1ghvb4orjqska1u1sio/etn5ttv3p6f6la9136co"
+
+    url = input("Адрес сайта: ")
+    max_page = int(input("До какой страницы парсить? "))
+    condition = int(input("Какой класс сохранности? "))
+
+    parser = CoinParser(url)
+    total_saved = 0
+
+    print("\n🚀 Начинаю парсинг и сохранение в YDB...\n")
+
+    with YDBBatchSaver(YDB_ENDPOINT, YDB_DATABASE) as saver:
+        async for page_coins in parser.parse_pages_generator(1, max_page):
+            if page_coins:
+                print(f"📦 Получен батч из {len(page_coins)} монет")
+
+                try:
+                    saved = saver.save_coins_batch(page_coins, condition)
+                    total_saved += saved
+                    print(f"✓ Сохранено {saved} монет в базу")
+                except Exception as e:
+                    print(f"❌ Ошибка сохранения: {e}")
+
+    print(f"\n✅ Парсинг завершен! Всего сохранено: {total_saved} монет")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
