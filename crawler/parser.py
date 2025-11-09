@@ -27,12 +27,13 @@ class CoinParser:
         self.base_url = url
         self.timeout = aiohttp.ClientTimeout(total=timeout)
         self.ua = UserAgent()
+        self.session_user_agent = None
 
     async def fetch_page(self, session: aiohttp.ClientSession, page: int) -> str:
         url = self.base_url.replace('PAGEN_1=1', f'PAGEN_1={page}')
 
         headers = {
-            "User-Agent": self.ua.random,
+            "User-Agent": self.session_user_agent,
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
             "Accept-Language": random.choice(["en-US,en;q=0.9", "ru-RU,ru;q=0.9"]),
             "Referer": self.base_url,
@@ -85,8 +86,8 @@ class CoinParser:
 
     async def parse_pages_generator(
             self,
+            start_page: int,
             end_page: int,
-            start_page: int = 1,
             min_delay: float = 3.0,
             max_delay: float = 6.0
     ) -> AsyncGenerator[List[Coin], None]:
@@ -94,13 +95,15 @@ class CoinParser:
         Генератор для постраничного парсинга монет
 
         Args:
+            start_page: начальная страница для парсинга
             end_page: последняя страница для парсинга
-            start_page: начальная страница (по умолчанию 1)
             min_delay: минимальная пауза между запросами (сек)
             max_delay: максимальная пауза между запросами (сек)
         """
         logger.info(f"Начало парсинга со страницы {start_page} до {end_page}")
         logger.info(f"Задержка между запросами: {min_delay}-{max_delay}с")
+
+        self.session_user_agent = self.ua.random
 
         async with aiohttp.ClientSession() as session:
             for page in range(start_page, end_page + 1):
