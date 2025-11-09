@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import random
 import ssl
 
@@ -53,29 +54,7 @@ class CoinParser:
 
                 name = name_link.get_text(strip=True)
                 url = name_link.get('href', '')
-
-                # ID монеты - пробуем несколько вариантов
-                coin_id = None
-
-                # Вариант 1: data-to-cart-btn
-                cart_btn = item.find(attrs={'data-to-cart-btn': True})
-                if cart_btn:
-                    coin_id = cart_btn.get('data-to-cart-btn')
-
-                # Вариант 2: id="list-item-..."
-                if not coin_id:
-                    list_item = item.find(id=lambda x: x and x.startswith('list-item-'))
-                    if list_item:
-                        coin_id = list_item.get('id').replace('list-item-', '')
-
-                # Вариант 3: любой элемент с id внутри
-                if not coin_id:
-                    elem_with_id = item.find(id=True)
-                    if elem_with_id:
-                        coin_id = elem_with_id.get('id')
-
-                if not coin_id:
-                    coin_id = f"unknown_{hash(name)}"
+                coin_id = hashlib.sha1(url.encode('utf-8')).hexdigest()
 
                 coin = Coin(
                     id=str(coin_id),

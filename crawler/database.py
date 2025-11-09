@@ -4,6 +4,7 @@ import ydb
 from dotenv import load_dotenv
 from coin import Coin
 
+
 class YDBBatchSaver:
     """Сохранение данных в YDB батчами"""
 
@@ -41,6 +42,11 @@ class YDBBatchSaver:
         if self.driver:
             self.driver.stop()
 
+    @staticmethod
+    def _escape_string(s: str) -> str:
+        """Экранирование строк для YQL"""
+        return s.replace("\\", "\\\\").replace('"', '\\"').replace("'", "\\'")
+
     def save_coins_batch(
             self,
             coins: List[Coin],
@@ -50,32 +56,25 @@ class YDBBatchSaver:
             return 0
 
         def execute_batch(session):
+            values_list = []
             for coin in coins:
-                query = f"""
-                        DECLARE $url AS String;
-                        DECLARE $coin_id AS String;
-                        DECLARE $title AS String;
-                        DECLARE $condition AS Int8;
-                        DECLARE $status AS String;
+                escaped_url = self._escape_string(coin.url)
+                escaped_title = self._escape_string(coin.name)
+                escaped_id = self._escape_string(coin.id)
 
-                        $status = "new";
-                        $coin_id = "{coin.id}";
-                        $url = "{coin.url}";
-                        $title = "{coin.name}";
-                        $condition = {condition};
+                values_list.append(
+                    f'("{escaped_id}", "{escaped_url}", "{escaped_title}", {condition}, "new")'
+                )
 
-                        INSERT INTO coins (
-                             status,
-                             coin_id,
-                             source_url,
-                             title,
-                             condition
-                            )
-                        VALUES ($status, $coin_id, $url, $title, $condition);
-                    """
+            values_str = ",\n".join(values_list)
 
-                session.transaction().execute(query, commit_tx=True)
+            query = f"""
+                UPSERT INTO coins (coin_id, source_url, title, condition, status)
+                VALUES
+                {values_str};
+            """
 
+            session.transaction().execute(query, commit_tx=True)
             return len(coins)
 
         try:
@@ -84,13 +83,19 @@ class YDBBatchSaver:
             print(f"Ошибка при пакетной вставке в YDB: {e}")
             return 0
 
+
 load_dotenv()
 
 if __name__ == '__main__':
     YDB_ENDPOINT = os.getenv("YDB_ENDPOINT")
     YDB_DATABASE = os.getenv("YDB_DATABASE")
 
-    page_coins = [Coin("1233", "title", "http")]
+    page_coins = [
+        Coin("1233", "title", "http"),
+        Coin("1234", "title2", "http2"),
+        Coin("1235", "title's with quote", "http3")
+    ]
 
     with YDBBatchSaver(YDB_ENDPOINT, YDB_DATABASE) as saver:
         saved = saver.save_coins_batch(page_coins, 1)
+        print(f"Сохранено монет: {saved}")
