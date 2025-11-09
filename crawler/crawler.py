@@ -8,6 +8,7 @@ from filter import CoinFilter, FilterSettings
 
 load_dotenv()
 
+
 async def main():
     YDB_ENDPOINT = os.getenv("YDB_ENDPOINT")
     YDB_DATABASE = os.getenv("YDB_DATABASE")
@@ -23,7 +24,8 @@ async def main():
     coin_filter = CoinFilter(FilterSettings(restricted_stems=["рейх", "слаб"]))
 
     with YDBBatchSaver(YDB_ENDPOINT, YDB_DATABASE) as saver:
-        async for page_coins in parser.parse_pages_generator(1, start_page, finish_page):
+        async for page_coins in parser.parse_pages_generator(finish_page, start_page,
+                                                             min_delay=4.0, max_delay=7.0):
             if page_coins:
                 print(f"📦 Получен батч из {len(page_coins)} монет")
 

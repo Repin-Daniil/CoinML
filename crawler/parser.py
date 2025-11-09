@@ -86,7 +86,9 @@ class CoinParser:
     async def parse_pages_generator(
             self,
             end_page: int,
-            start_page: int = 1
+            start_page: int = 1,
+            min_delay: float = 3.0,
+            max_delay: float = 6.0
     ) -> AsyncGenerator[List[Coin], None]:
         """
         Генератор для постраничного парсинга монет
@@ -94,8 +96,11 @@ class CoinParser:
         Args:
             end_page: последняя страница для парсинга
             start_page: начальная страница (по умолчанию 1)
+            min_delay: минимальная пауза между запросами (сек)
+            max_delay: максимальная пауза между запросами (сек)
         """
         logger.info(f"Начало парсинга со страницы {start_page} до {end_page}")
+        logger.info(f"Задержка между запросами: {min_delay}-{max_delay}с")
 
         async with aiohttp.ClientSession() as session:
             for page in range(start_page, end_page + 1):
@@ -110,7 +115,7 @@ class CoinParser:
 
                     # Пауза перед следующим запросом
                     if page < end_page:
-                        pause = random.uniform(3.0, 6.0)
+                        pause = random.uniform(min_delay, max_delay)
                         logger.info(f"Пауза {pause:.2f}с перед следующим запросом")
                         await asyncio.sleep(pause)
 
