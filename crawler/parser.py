@@ -1,14 +1,23 @@
 import asyncio
 import hashlib
+import logging
 import random
 import ssl
+import time
+from typing import List, AsyncGenerator
 
 import aiohttp
 from bs4 import BeautifulSoup
-from typing import List, AsyncGenerator
 from fake_useragent import UserAgent
 
 from coin import Coin
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 
 class CoinParser:
@@ -34,20 +43,23 @@ class CoinParser:
         ssl_context.check_hostname = False
         ssl_context.verify_mode = ssl.CERT_NONE
 
+        start_time = time.time()
         async with session.get(url, ssl=ssl_context, headers=headers, timeout=self.timeout) as response:
             response.raise_for_status()
-            return await response.text()
+            html = await response.text()
+            request_time = time.time() - start_time
+            logger.info(f"Запрос выполнен за {request_time:.2f}с")
+            return html
 
     def parse_coins(self, html: str) -> List[Coin]:
+        start_time = time.time()
         soup = BeautifulSoup(html, 'html.parser')
         coins = []
 
-        # Найти все блоки с монетами
         product_items = soup.find_all('div', class_='product-item-wrapper')
 
         for item in product_items:
             try:
-                # Название и ссылка
                 name_link = item.find('a', class_='name')
                 if not name_link:
                     continue
@@ -64,28 +76,47 @@ class CoinParser:
                 coins.append(coin)
 
             except Exception as e:
-                print(f"Ошибка при парсинге монеты: {e}")
+                logger.warning(f"Ошибка при парсинге монеты: {e}")
                 continue
 
+        parse_time = time.time() - start_time
+        logger.info(f"Парсинг завершен за {parse_time:.2f}с, найдено {len(coins)} монет")
         return coins
 
     async def parse_pages_generator(
             self,
-            start_page: int,
-            end_page: int
+            end_page: int,
+            start_page: int = 1
     ) -> AsyncGenerator[List[Coin], None]:
+        """
+        Генератор для постраничного парсинга монет
+
+        Args:
+            end_page: последняя страница для парсинга
+            start_page: начальная страница (по умолчанию 1)
+        """
+        logger.info(f"Начало парсинга со страницы {start_page} до {end_page}")
+
         async with aiohttp.ClientSession() as session:
             for page in range(start_page, end_page + 1):
+                page_start_time = time.time()
+
                 try:
-                    print(f"Парсинг страницы {page}...")
+                    logger.info(f"--- Страница {page}/{end_page} ---")
                     html = await self.fetch_page(session, page)
                     coins = self.parse_coins(html)
 
-                    print(f"✓ Страница {page}: найдено {len(coins)} монет")
                     yield coins
 
-                    await asyncio.sleep(random.uniform(1.0, 4.0))
+                    # Пауза перед следующим запросом
+                    if page < end_page:
+                        pause = random.uniform(3.0, 6.0)
+                        logger.info(f"Пауза {pause:.2f}с перед следующим запросом")
+                        await asyncio.sleep(pause)
+
+                    page_total_time = time.time() - page_start_time
+                    logger.info(f"Страница {page} обработана за {page_total_time:.2f}с\n")
 
                 except Exception as e:
-                    print(f"✗ Ошибка на странице {page}: {e}")
+                    logger.error(f"Ошибка на странице {page}: {e}")
                     yield []

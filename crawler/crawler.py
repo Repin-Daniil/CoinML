@@ -13,7 +13,8 @@ async def main():
     YDB_DATABASE = os.getenv("YDB_DATABASE")
 
     url = input("Адрес сайта: ")
-    max_page = int(input("До какой страницы парсить? "))
+    start_page = int(input("С какой страницы парсить? "))
+    finish_page = int(input("До какой страницы парсить? "))
     condition = int(input("Какой класс сохранности? "))
 
     parser = CoinParser(url)
@@ -21,10 +22,8 @@ async def main():
 
     coin_filter = CoinFilter(FilterSettings(restricted_stems=["рейх", "слаб"]))
 
-    print("\n🚀 Начинаю парсинг и сохранение в YDB...\n")
-
     with YDBBatchSaver(YDB_ENDPOINT, YDB_DATABASE) as saver:
-        async for page_coins in parser.parse_pages_generator(1, max_page):
+        async for page_coins in parser.parse_pages_generator(1, start_page, finish_page):
             if page_coins:
                 print(f"📦 Получен батч из {len(page_coins)} монет")
 
