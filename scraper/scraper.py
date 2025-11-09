@@ -97,7 +97,7 @@ class CoinParserService:
     async def process_batch(self) -> bool:
         """Обработка одного батча монет"""
         try:
-            with CoinYdbRepository(self.ydb_endpoint, self.ydb_database, "coins_train") as repository:
+            with CoinYdbRepository(self.ydb_endpoint, self.ydb_database, "coins") as repository:
                 batch_start = time.time()
                 coins = repository.get_new_coins_batch(self.batch_size)
                 fetch_time = time.time() - batch_start
