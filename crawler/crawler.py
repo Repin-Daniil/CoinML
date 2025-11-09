@@ -23,7 +23,7 @@ async def main():
 
     coin_filter = CoinFilter(FilterSettings(restricted_stems=["рейх", "слаб"]))
 
-    with YDBBatchSaver(YDB_ENDPOINT, YDB_DATABASE) as saver:
+    with YDBBatchSaver(YDB_ENDPOINT, YDB_DATABASE, "coins") as saver:
         async for page_coins in parser.parse_pages_generator(start_page, finish_page,
                                                              min_delay=4.0, max_delay=7.0):
             if page_coins:

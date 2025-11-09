@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import List
-from coin import Coin
+from model.coin import Coin
 
 
 @dataclass

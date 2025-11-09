@@ -9,7 +9,8 @@ UPDATE coins
 SET
     s3_path_obverse=$obverse,
     s3_path_reverse=$reverse,
-    status = "Saved"
+    status = "Saved",
+    retry_count = 0
 WHERE coin_id = $coin_id
 
 -- Error case
