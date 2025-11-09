@@ -1,4 +1,3 @@
-import logging
 from dataclasses import dataclass
 from typing import List
 from coin import Coin
@@ -32,13 +31,9 @@ class CoinFilter:
                 good.append(coin)
 
         if bad:
-            print(
-                "❌ Отфильтровано %d монет (содержат запрещенные слова).",
-                len(bad),
-            )
+            print(f"❌ Отфильтровано {len(bad)}монет (содержат запрещенные слова).")
 
         return good
-
 
 
 if __name__ == "__main__":
@@ -49,7 +44,6 @@ if __name__ == "__main__":
     all_coins = [
         Coin(id="123", url="http", name="2 рубля 2004 года в слабе"),
     ]
-
 
     print("--- Запуск фильтрации (Блэклист) ---")
     coin_filter = CoinFilter(filter_config)

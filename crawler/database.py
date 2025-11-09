@@ -1,8 +1,8 @@
 import os
 from typing import List
 import ydb
+from dotenv import load_dotenv
 from coin import Coin
-
 
 class YDBBatchSaver:
     """Сохранение данных в YDB батчами"""
@@ -84,10 +84,11 @@ class YDBBatchSaver:
             print(f"Ошибка при пакетной вставке в YDB: {e}")
             return 0
 
+load_dotenv()
 
 if __name__ == '__main__':
-    YDB_ENDPOINT = "grpcs://ydb.serverless.yandexcloud.net:2135"
-    YDB_DATABASE = "/ru-central1/b1ghvb4orjqska1u1sio/etn5ttv3p6f6la9136co"
+    YDB_ENDPOINT = os.getenv("YDB_ENDPOINT")
+    YDB_DATABASE = os.getenv("YDB_DATABASE")
 
     page_coins = [Coin("1233", "title", "http")]
 

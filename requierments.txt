@@ -1,2 +1,7 @@
 numpy
 opencv-python
+python-dotenv
+aiohttp
+beautifulsoup4
+ydb
+fake-useragent

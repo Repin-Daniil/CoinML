@@ -1,12 +1,16 @@
 import asyncio
+import os
+from dotenv import load_dotenv
 
 from parser import CoinParser
 from database import YDBBatchSaver
+from filter import CoinFilter, FilterSettings
+
+load_dotenv()
 
 async def main():
-    # todo вынести в envÏ
-    YDB_ENDPOINT = "grpcs://ydb.serverless.yandexcloud.net:2135"
-    YDB_DATABASE = "/ru-central1/b1ghvb4orjqska1u1sio/etn5ttv3p6f6la9136co"
+    YDB_ENDPOINT = os.getenv("YDB_ENDPOINT")
+    YDB_DATABASE = os.getenv("YDB_DATABASE")
 
     url = input("Адрес сайта: ")
     max_page = int(input("До какой страницы парсить? "))
@@ -14,6 +18,8 @@ async def main():
 
     parser = CoinParser(url)
     total_saved = 0
+
+    coin_filter = CoinFilter(FilterSettings(restricted_stems=["рейх", "слаб"]))
 
     print("\n🚀 Начинаю парсинг и сохранение в YDB...\n")
 
@@ -23,6 +29,7 @@ async def main():
                 print(f"📦 Получен батч из {len(page_coins)} монет")
 
                 try:
+                    page_coins = coin_filter.filter(page_coins)
                     saved = saver.save_coins_batch(page_coins, condition)
                     total_saved += saved
                     print(f"✓ Сохранено {saved} монет в базу")
