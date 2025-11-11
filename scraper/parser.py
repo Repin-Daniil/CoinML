@@ -1,8 +1,8 @@
 import logging
 import aiohttp
 from bs4 import BeautifulSoup
-from model.coin import CoinMetadata
-from lib.fetcher import Fetcher
+from common.coin import CoinMetadata
+from common.fetcher import Fetcher
 
 logging.basicConfig(
     level=logging.INFO,

@@ -8,7 +8,7 @@ from typing import Optional
 
 from dotenv import load_dotenv
 
-from lib.coin_repository import CoinYdbRepository
+from common.repository import CoinYdbRepository
 from parser import CoinMetadataParser
 
 logging.basicConfig(

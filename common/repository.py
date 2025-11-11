@@ -2,12 +2,10 @@ import os
 from typing import List
 import ydb
 from dotenv import load_dotenv
-from model.coin import Coin, CoinMetadata
+from common.coin import Coin, CoinMetadata, CoinImage
 
 
 class CoinYdbRepository:
-    """Сохранение данных в YDB батчами"""
-
     def __init__(self, endpoint: str, database: str, table: str):
         self.endpoint = endpoint
         self.database = database
@@ -15,8 +13,7 @@ class CoinYdbRepository:
         self.driver = None
         self.pool = None
 
-    def __enter__(self):
-        """Инициализация подключения"""
+    def connect(self):
         driver_config = ydb.DriverConfig(
             endpoint=self.endpoint,
             database=self.database,
@@ -36,12 +33,18 @@ class CoinYdbRepository:
         self.pool = ydb.SessionPool(self.driver)
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Закрытие подключения"""
+    def close(self):
         if self.pool:
             self.pool.stop()
         if self.driver:
             self.driver.stop()
+
+    def __enter__(self):
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
     @staticmethod
     def _escape_string(s: str) -> str:
@@ -89,7 +92,7 @@ class CoinYdbRepository:
 
         def execute_query(session):
             query = f"""
-                SELECT coin_id, source_url, retry_count
+                SELECT coin_id, source_url
                 FROM {self.table}
                 WHERE status = "new"
                 LIMIT {batch_size};
@@ -116,6 +119,70 @@ class CoinYdbRepository:
         except ydb.Error as e:
             print(f"Ошибка при получении батча монет из YDB: {e}")
             return []
+
+    def get_coins_image_batch(self, batch_size: int) -> List[CoinImage]:
+        """Получает картинки для монет"""
+
+        def execute_query(session):
+            query = f"""
+                SELECT coin_id, condition, image_url_obverse, image_url_reverse
+                FROM {self.table}
+                WHERE status = "scrapped_metadata"
+                LIMIT {batch_size}
+            """
+
+            result_sets = session.transaction().execute(
+                query,
+                commit_tx=True
+            )
+
+            coins_images = []
+            for row in result_sets[0].rows:
+                coin = CoinImage(
+                    id=row.coin_id.decode('utf-8') if isinstance(row.coin_id, bytes) else row.coin_id,
+                    condition=int(row.condition),
+                    image_obverse_url=row.image_url_obverse.decode('utf-8') if isinstance(row.image_url_obverse,
+                                                                                          bytes) else row.image_url_obverse,
+                    image_reverse_url=row.image_url_reverse.decode('utf-8') if isinstance(row.image_url_reverse,
+                                                                                          bytes) else row.image_url_reverse,
+                )
+                coins_images.append(coin)
+
+            return coins_images
+
+        try:
+            return self.pool.retry_operation_sync(execute_query)
+        except ydb.Error as e:
+            print(f"Ошибка при получении батча фото монет из YDB: {e}")
+            return []
+
+    def add_s3_images(self, coin: CoinImage) -> bool:
+        """Обновляет метаданные монеты и помечает её как 'scrapped_metadata'"""
+
+        def execute_update(session):
+            escaped_id = self._escape_string(coin.id)
+            escaped_obverse_url = self._escape_string(coin.s3_obverse_url)
+            escaped_reverse_url = self._escape_string(coin.s3_reverse_url)
+
+            query = f"""
+                   UPDATE {self.table}
+                   SET
+                       status = "downloaded",
+                       s3_path_obverse = "{escaped_obverse_url}",
+                       s3_path_reverse = "{escaped_reverse_url}",
+                       processed_at =  CurrentUtcTimestamp(),
+                       retry_count = 0
+                   WHERE coin_id = "{escaped_id}";
+               """
+
+            session.transaction().execute(query, commit_tx=True)
+            return True
+
+        try:
+            return self.pool.retry_operation_sync(execute_update)
+        except ydb.Error as e:
+            print(f"Ошибка при сохранении ссылок на s3 монеты {coin.id}: {e}")
+            return False
 
     def add_coin_metadata(self, coin: CoinMetadata) -> bool:
         """Обновляет метаданные монеты и помечает её как 'scrapped_metadata'"""
@@ -187,9 +254,11 @@ if __name__ == '__main__':
     TABLE = "coins_train"
 
     coins = [
-        Coin("1233", "title", "/catalog/products/m2_91978_3_rublya_2025_goda_pridnestrove_drevnie_kreposti_na_dnestre_khotinskaya_krepost/"),
+        Coin("1233", "title",
+             "/catalog/products/m2_91978_3_rublya_2025_goda_pridnestrove_drevnie_kreposti_na_dnestre_khotinskaya_krepost/"),
         Coin("1234", "title2", "/catalog/products/k10_5804_1_24_talera_1754_goda_saksoniya/"),
-        Coin("1235", "title's with quote", "/catalog/products/k10_11098_50_santimov_1942_goda_frantsuzskaya_ekvatorialnaya_afrika/")
+        Coin("1235", "title's with quote",
+             "/catalog/products/k10_11098_50_santimov_1942_goda_frantsuzskaya_ekvatorialnaya_afrika/")
     ]
 
     # coin_metadata = CoinMetadata(id="1233", metal="gold", year=1234, country="Russia", denomination="Рубль")

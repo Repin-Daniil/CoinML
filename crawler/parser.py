@@ -8,8 +8,8 @@ from typing import List, AsyncGenerator
 import aiohttp
 from bs4 import BeautifulSoup
 
-from model.coin import Coin
-from lib.fetcher import Fetcher
+from common.coin import Coin
+from common.fetcher import Fetcher
 
 logging.basicConfig(
     level=logging.INFO,
