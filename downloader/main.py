@@ -6,7 +6,7 @@ from datetime import datetime
 
 from dotenv import load_dotenv
 
-from downloader.service import CoinImageService
+from service import CoinImageService
 
 logging.basicConfig(
     level=logging.INFO,
