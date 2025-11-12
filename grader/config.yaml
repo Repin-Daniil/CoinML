@@ -1,0 +1,53 @@
+# === Параметры данных ===
+data:
+  path: "./dataset/"    # Путь к скачанным данным
+  image_size: 384
+  num_classes: 5
+  val_split: 0.2        # Доля данных для валидации (например, 20%)
+  
+# === Параметры обучения ===
+training:
+  batch_size: 8       # (Для A100 можно и 64)
+  epochs: 50
+  optimizer: "Adam"     # (Adam, RMSprop)
+  
+  # 1. Начальный Learning Rate (важно!)
+  learning_rate: 0.001
+  # 2. Параметры для ReduceLROnPlateau (снижение LR)
+  lr_scheduler_factor: 0.2   # Во сколько раз уменьшить
+  lr_scheduler_patience: 3   # Сколько эпох ждать улучшения
+  lr_scheduler_min_lr: 0.00001  # Минимальный LR
+  
+# === Параметры Модели ===
+model:
+  # 3. Название архитектуры бэкбона
+  backbone_name: "SimpleCNN"  # (Варианты: "ResNet50", "MobileNetV2", "SimpleCNN")
+  
+  # 4. Dropout rate (борьба с переобучением)
+  dropout_rate: 0.5
+  
+  # Размер Dense слоя перед классификацией
+  dense_units: 256
+  
+# === Параметры Аугментации ===
+augmentation:
+  # 5. Шанс горизонтального/вертикального отражения
+  flip_mode: "horizontal_and_vertical"
+  
+  # 6. Диапазон случайного поворота (в градусах)
+  rotation_factor: 0.1   # (в долях от 360, т.е. 0.1 = 36 град)
+  
+  # 7. Диапазон изменения яркости
+  brightness_factor: 0.2
+  
+  # 8. Zoom
+  zoom_factor: 0.1
+  
+# === Логирование ===
+wandb:
+  project_name: "CoinGrader-Project"
+  run_name: "run_resnet50_from_scratch"
+  
+# === Другие параметры ===
+seed: 42
+early_stopping_patience: 10

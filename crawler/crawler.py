@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 
 from parser import CoinParser
-from database import YDBBatchSaver
+from common.repository import CoinYdbRepository
 from filter import CoinFilter, FilterSettings
 
 load_dotenv()
@@ -21,9 +21,9 @@ async def main():
     parser = CoinParser(url)
     total_saved = 0
 
-    coin_filter = CoinFilter(FilterSettings(restricted_stems=["рейх", "слаб"]))
+    coin_filter = CoinFilter(FilterSettings(restricted_stems=["рейх", "слаб", "набор"]))
 
-    with YDBBatchSaver(YDB_ENDPOINT, YDB_DATABASE, "coins") as saver:
+    with CoinYdbRepository(YDB_ENDPOINT, YDB_DATABASE, "coins") as saver:
         async for page_coins in parser.parse_pages_generator(start_page, finish_page,
                                                              min_delay=4.0, max_delay=7.0):
             if page_coins:
