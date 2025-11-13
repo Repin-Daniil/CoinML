@@ -281,7 +281,7 @@ def build_model_with_pretrained(config, weights='imagenet'):
     print(f"✓ Создан backbone: {backbone_name} с весами {weights}")
     
     # Заморозка начальных слоев (опционально)
-    # backbone.trainable = False  # Раскомментировать для fine-tuning
+    backbone.trainable = False  # Раскомментировать для fine-tuning
     
     # Применяем бэкбон к обоим входам
     features_obverse = backbone(input_obverse)

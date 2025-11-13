@@ -197,19 +197,19 @@ def create_dataset_pipeline(samples, config, is_training=True):
     dataset = dataset.batch(batch_size)
     
     # Аугментация (применяется к батчу, только для обучения)
-    if is_training:
-        augmentation = create_augmentation_layer(config)
-        
-        def apply_augmentation(images, labels):
-            img_a, img_b = images
-            img_a = augmentation(img_a, training=True)
-            img_b = augmentation(img_b, training=True)
-            return (img_a, img_b), labels
-        
-        dataset = dataset.map(
-            apply_augmentation,
-            num_parallel_calls=tf.data.AUTOTUNE
-        )
+    # if is_training:
+        # augmentation = create_augmentation_layer(config)
+        #
+        # def apply_augmentation(images, labels):
+        #     img_a, img_b = images
+        #     img_a = augmentation(img_a, training=True)
+        #     img_b = augmentation(img_b, training=True)
+        #     return (img_a, img_b), labels
+        #
+        # dataset = dataset.map(
+        #     apply_augmentation,
+        #     num_parallel_calls=tf.data.AUTOTUNE
+        # )
     
     # Prefetch для оптимизации
     dataset = dataset.prefetch(tf.data.AUTOTUNE)
