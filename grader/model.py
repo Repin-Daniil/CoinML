@@ -4,7 +4,7 @@
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
-
+from tensorflow.keras import mixed_precision
 
 def create_simple_cnn(input_shape):
     """
@@ -53,7 +53,7 @@ def create_simple_cnn(input_shape):
     return model
 
 
-def create_backbone(backbone_name, input_shape, pretrained=True):
+def create_backbone(backbone_name, input_shape, pretrained=False):
     """
     Создает backbone для извлечения признаков
     
@@ -158,14 +158,15 @@ def build_model(config):
     print("\n" + "="*50)
     print("СОЗДАНИЕ МОДЕЛИ")
     print("="*50)
-    
+
     image_size = config['data']['image_size']
     num_classes = config['data']['num_classes']
     backbone_name = config['model']['backbone_name']
-    pretrained = config['model']['pretrained']
     dropout_rate = config['model']['dropout_rate']
     dense_units = config['model']['dense_units']
-    
+
+    mixed_precision.set_global_policy('mixed_float16')
+
     input_shape = (image_size, image_size, 3)
     
     # Создаем два входа
@@ -173,7 +174,7 @@ def build_model(config):
     input_reverse = keras.Input(shape=input_shape, name='input_reverse')
     
     # Создаем ОДИН бэкбон (shared weights)
-    backbone = create_backbone(backbone_name, input_shape, pretrained)
+    backbone = create_backbone(backbone_name, input_shape) # try
     
     # Применяем бэкбон к обоим входам
     features_obverse = backbone(input_obverse)
@@ -195,7 +196,7 @@ def build_model(config):
     x = layers.Dropout(dropout_rate / 2, name='dropout2')(x)
     
     # Выходной слой
-    outputs = layers.Dense(num_classes, activation='softmax', name='output')(x)
+    outputs = layers.Dense(num_classes, activation='softmax', name='output', dtype='float32')(x)
     
     # Создаем модель
     model = keras.Model(

@@ -1,5 +1,6 @@
 # Core Deep Learning
 tensorflow>=2.13.0
+tensorflow[and-cuda]
 numpy>=1.24.0
 
 # Configuration & Utilities
