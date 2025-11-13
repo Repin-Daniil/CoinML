@@ -7,7 +7,7 @@ data:
   
 # === Параметры обучения ===
 training:
-  batch_size: 8       # (Для A100 можно и 64)
+  batch_size: 32       # (Для A100 можно и 64)
   epochs: 50
   optimizer: "Adam"     # (Adam, RMSprop)
   
@@ -21,8 +21,8 @@ training:
 # === Параметры Модели ===
 model:
   # 3. Название архитектуры бэкбона
-  backbone_name: "SimpleCNN"  # (Варианты: "ResNet50", "MobileNetV2", "SimpleCNN")
-  
+  backbone_name: "ResNet50"  # (Варианты: "ResNet50", "MobileNetV2", "SimpleCNN")
+  pretrained: true
   # 4. Dropout rate (борьба с переобучением)
   dropout_rate: 0.5
   

@@ -64,7 +64,6 @@ def scan_dataset(data_path, banned_file="banned.txt"):
         for coin_id in coin_ids:
             # --- Проверка на бан ---
             if coin_id in banned_ids:
-                print(f"🚫 Пропущен забаненный coin_id: {coin_id}")
                 continue
 
             obverse_name = f"{coin_id}_obverse"

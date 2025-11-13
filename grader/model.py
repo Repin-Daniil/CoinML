@@ -53,59 +53,87 @@ def create_simple_cnn(input_shape):
     return model
 
 
-def create_backbone(backbone_name, input_shape):
+def create_backbone(backbone_name, input_shape, pretrained=True):
     """
-    Создает бэкбон для извлечения признаков
+    Создает backbone для извлечения признаков
     
     Args:
-        backbone_name (str): Название архитектуры ('ResNet50', 'MobileNetV2', 'SimpleCNN')
+        backbone_name (str): Название архитектуры 
+            ('ResNet50', 'ResNet50V2', 'MobileNetV2', 'EfficientNetB0', 
+             'EfficientNetB3', 'DenseNet121', 'ConvNeXtTiny', 'SimpleCNN')
         input_shape (tuple): Форма входного изображения (H, W, C)
+        pretrained (bool): Использовать ли предобученные веса (imagenet)
         
     Returns:
         tf.keras.Model: Модель-бэкбон
     """
+    
+    weights = 'imagenet' if pretrained else None
+    
     if backbone_name == "ResNet50":
         backbone = keras.applications.ResNet50(
-            weights=None,
+            weights=weights,
             include_top=False,
             input_shape=input_shape,
             pooling=None
         )
-        print(f"✓ Создан backbone: ResNet50 (обучение с нуля)")
         
     elif backbone_name == "ResNet50V2":
         backbone = keras.applications.ResNet50V2(
-            weights=None,
+            weights=weights,
             include_top=False,
             input_shape=input_shape,
             pooling=None
         )
-        print(f"✓ Создан backbone: ResNet50V2 (обучение с нуля)")
         
     elif backbone_name == "MobileNetV2":
         backbone = keras.applications.MobileNetV2(
-            weights=None,
+            weights=weights,
             include_top=False,
             input_shape=input_shape,
             pooling=None
         )
-        print(f"✓ Создан backbone: MobileNetV2 (обучение с нуля)")
         
     elif backbone_name == "EfficientNetB0":
         backbone = keras.applications.EfficientNetB0(
-            weights=None,
+            weights=weights,
             include_top=False,
             input_shape=input_shape,
             pooling=None
         )
-        print(f"✓ Создан backbone: EfficientNetB0 (обучение с нуля)")
         
+    elif backbone_name == "EfficientNetB3":
+        backbone = keras.applications.EfficientNetB3(
+            weights=weights,
+            include_top=False,
+            input_shape=input_shape,
+            pooling=None
+        )
+        
+    elif backbone_name == "DenseNet121":
+        backbone = keras.applications.DenseNet121(
+            weights=weights,
+            include_top=False,
+            input_shape=input_shape,
+            pooling=None
+        )
+        
+    elif backbone_name == "ConvNeXtTiny":
+        backbone = keras.applications.ConvNeXtTiny(
+            weights=weights,
+            include_top=False,
+            input_shape=input_shape,
+            pooling=None
+        )
+
     elif backbone_name == "SimpleCNN":
         backbone = create_simple_cnn(input_shape)
-        print(f"✓ Создан backbone: SimpleCNN (кастомная архитектура)")
-        
+        weights = None  # Для кастомной сети
     else:
         raise ValueError(f"Неизвестный backbone: {backbone_name}")
+    
+    print(f"✓ Создан backbone: {backbone_name} "
+          f"({'предобученные веса' if pretrained else 'обучение с нуля'})")
     
     return backbone
 
@@ -134,6 +162,7 @@ def build_model(config):
     image_size = config['data']['image_size']
     num_classes = config['data']['num_classes']
     backbone_name = config['model']['backbone_name']
+    pretrained = config['model']['pretrained']
     dropout_rate = config['model']['dropout_rate']
     dense_units = config['model']['dense_units']
     
@@ -144,7 +173,7 @@ def build_model(config):
     input_reverse = keras.Input(shape=input_shape, name='input_reverse')
     
     # Создаем ОДИН бэкбон (shared weights)
-    backbone = create_backbone(backbone_name, input_shape)
+    backbone = create_backbone(backbone_name, input_shape, pretrained)
     
     # Применяем бэкбон к обоим входам
     features_obverse = backbone(input_obverse)
