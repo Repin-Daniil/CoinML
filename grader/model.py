@@ -137,6 +137,28 @@ def create_backbone(backbone_name, input_shape, pretrained=False):
     
     return backbone
 
+def create_augmentation_layer(config):
+    aug_config = config['augmentation']
+    layers = []
+
+    if aug_config['flip_mode'] == 'horizontal':
+        layers.append(tf.keras.layers.RandomFlip("horizontal"))
+    elif aug_config['flip_mode'] == 'vertical':
+        layers.append(tf.keras.layers.RandomFlip("vertical"))
+    elif aug_config['flip_mode'] == 'horizontal_and_vertical':
+        layers.append(tf.keras.layers.RandomFlip("horizontal_and_vertical"))
+    
+    if aug_config['rotation_factor'] > 0:
+        layers.append(tf.keras.layers.RandomRotation(aug_config['rotation_factor']))
+    
+    if aug_config.get('zoom_factor', 0) > 0:
+        layers.append(tf.keras.layers.RandomZoom(aug_config['zoom_factor']))
+    
+    if aug_config['brightness_factor'] > 0:
+        layers.append(tf.keras.layers.RandomBrightness(aug_config['brightness_factor']))
+
+    return tf.keras.Sequential(layers, name='augmentation')
+
 
 def build_model(config):
     """
@@ -173,12 +195,17 @@ def build_model(config):
     input_obverse = keras.Input(shape=input_shape, name='input_obverse')
     input_reverse = keras.Input(shape=input_shape, name='input_reverse')
     
+    # 🔹 Создаём слой аугментации (он сам знает про training=True/False)
+    augmentation = create_augmentation_layer(config)
+    aug_obverse = augmentation(input_obverse)
+    aug_reverse = augmentation(input_reverse)
+    
     # Создаем ОДИН бэкбон (shared weights)
     backbone = create_backbone(backbone_name, input_shape) # try
     
     # Применяем бэкбон к обоим входам
-    features_obverse = backbone(input_obverse)
-    features_reverse = backbone(input_reverse)
+    features_obverse = backbone(aug_obverse)
+    features_reverse = backbone(aug_reverse)
     
     # Global Average Pooling для каждого выхода
     pooled_obverse = layers.GlobalAveragePooling2D(name='gap_obverse')(features_obverse)

@@ -1,13 +1,13 @@
 # === Параметры данных ===
 data:
   path: "./dataset/"    # Путь к скачанным данным
-  image_size: 224
+  image_size: 384
   num_classes: 5
   val_split: 0.2        # Доля данных для валидации (например, 20%)
   
 # === Параметры обучения ===
 training:
-  batch_size: 32       # (Для A100 можно и 64)
+  batch_size: 64       # (Для A100 можно и 64)
   epochs: 50
   optimizer: "Adam"     # (Adam, RMSprop)
   
